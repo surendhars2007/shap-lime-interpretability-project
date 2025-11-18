@@ -1,102 +1,133 @@
-# 🔍 SHAP & LIME Explainability Project  
-**Machine Learning Global & Local Interpretability Analysis**
+# Advanced Interpretability of Black-Box Models Using SHAP and LIME
 
-This project demonstrates a complete workflow for **model explainability** using both **SHAP** (global & local explanations) and **LIME** (local explanations).  
-It includes feature interaction analysis, global feature importance, and detailed comparison of SHAP vs LIME for a single prediction instance.
+## Project Overview
 
-This project is suitable for academic submission, corporate ML explainability, and interview-ready portfolio work.
+This project demonstrates advanced model interpretability techniques applied to a non-linear, “black-box” classification model. Using **LightGBM** as the predictive model, we explore both **global** and **local** interpretability through **SHAP** (SHapley Additive exPlanations) and **LIME** (Local Interpretable Model-agnostic Explanations).  
 
----
-
-# 📘 Table of Contents
-- [Introduction](#introduction)
-- [Project Goal](#project-goal)
-- [Features](#features)
-- [Technologies Used](#technologies-used)
-- [Project Structure](#project-structure)
-- [How to Run](#how-to-run)
-- [Model Training](#model-training)
-- [Global SHAP Explanations](#global-shap-explanations)
-- [Local Explanation (SHAP + LIME)](#local-explanation-shap--lime)
-- [Comparative Analysis](#comparative-analysis)
-- [Feature Interaction Analysis](#feature-interaction-analysis)
-- [Results](#results)
-- [Screenshots](#screenshots)
-- [Conclusion](#conclusion)
-- [Author](#author)
+The focus is not just on high predictive performance, but also on **understanding feature importance, interactions, and individual predictions**, providing actionable insights for business stakeholders.
 
 ---
 
-# 🧠 Introduction
+## Repository Contents
 
-Machine learning models often act like "black boxes," making predictions without explaining how they arrived at them.  
-This project solves that by using:
-
-- **SHAP** (SHapley Additive exPlanations) → mathematically consistent, global & local explanations  
-- **LIME** (Local Interpretable Model-Agnostic Explanations) → local linear approximation for individual predictions  
-
-Both techniques are implemented on a classification model and compared for interpretability.
-
----
-
-# 🎯 Project Goal
-
-This project aims to:
-
-1. Train a machine learning model  
-2. Generate global model explainability using SHAP  
-3. Generate local instance-level explanations using SHAP and LIME  
-4. Compare global vs local interpretability  
-5. Analyze feature interactions using SHAP dependence & interaction values  
-6. Produce a complete, submission-ready ML explainability report  
+| File | Description |
+|------|-------------|
+| `shap_analysis.py` | Main Python script to train LightGBM, generate SHAP and LIME explanations, and save the model. |
+| `final_lgbm_model.pkl` | Trained LightGBM model serialized using Joblib. |
+| `lime_explanation.html` | Interactive LIME explanation for a selected test instance. |
+| `README.md` | Project overview, methodology, and results. |
 
 ---
 
-# 🚀 Features
+## Dataset
 
-### ✔ Model Training
-- Loading dataset  
-- Cleaning, preprocessing  
-- Train-test split  
-- Random Forest / LightGBM model training  
-- Evaluation metrics (Accuracy, AUC, Precision, Recall, F1)
+- Synthetic classification dataset with **1000 samples and 20 features**.
+- 10 informative features and 5 redundant features.
+- Split into **train (50%)** and **test (50%)** sets.
 
-### ✔ SHAP Explainability
-- Global SHAP summary plot  
-- SHAP bar plot  
-- SHAP force plot  
-- SHAP waterfall plot  
-- SHAP dependence plot  
-- Feature interaction discovery  
-
-### ✔ LIME Explainability
-- Local linear explanation for 1 instance  
-- Feature contribution visualization  
-- Comparison with SHAP for the same row  
-
-### ✔ Analysis Section
-- SHAP vs LIME convergence  
-- SHAP vs LIME divergence  
-- Which technique is better for global vs local view  
-- Feature interaction insights  
+*(In a real-world scenario, this could be a credit risk or customer churn dataset.)*
 
 ---
 
-# 🛠 Technologies Used
+## Model Training
 
-| Component | Technology |
-|----------|------------|
-| Language | Python |
-| ML Model | RandomForestClassifier / LightGBM |
-| Explainability | SHAP, LIME |
-| Libraries | Pandas, NumPy, Matplotlib, Scikit-Learn |
-| Output | Plots + printed SHAP/LIME values |
+- **Model**: LightGBM Classifier  
+- **Hyperparameters**:  
+  - `n_estimators=500`  
+  - `learning_rate=0.05`  
+  - `subsample=0.8`  
+  - `colsample_bytree=0.8`  
+- **Evaluation Metric**: AUC (Area Under the ROC Curve)  
+- **Early Stopping**: 30 rounds  
+
+**Performance on Test Set:**
+
+AUC: 0.981
+Accuracy: 0.92
+Precision, Recall, F1-score:
+Class 0 -> Precision: 0.96, Recall: 0.88, F1: 0.92
+Class 1 -> Precision: 0.88, Recall: 0.96, F1: 0.92
 
 ---
 
-# 📂 Project Structure
+## Interpretability
 
-📦 SHAP-LIME-Explainability
-┣ 📜 shap.py # Full working code
-┣ 📜 README.md # Documentation (this file)
-┗ 📁 data/ # (Optional) Your dataset
+### 1. SHAP (Global & Local)
+
+- **Global Feature Importance:** SHAP summary plot highlights the **top influential features** across all predictions.  
+- **Local Explanation:** SHAP waterfall plot explains individual predictions, showing **contributions of each feature**.  
+- **Feature Interaction:** Dependency plots reveal interactions between features that drive model predictions.
+
+**Example Global Top Features:**
+
+| Feature | Mean Absolute SHAP |
+|---------|------------------|
+| f17     | 1.09             |
+| f5      | 0.73             |
+| f16     | 0.59             |
+| f14     | 0.55             |
+| f4      | 0.48             |
+
+---
+
+### 2. LIME (Local Explanation)
+
+- **Local interpretability** for a specific instance (high-confidence correct prediction).  
+- Provides **human-understandable explanation** by approximating the black-box model locally.  
+- Output is saved as `lime_explanation.html` for interactive visualization.
+
+---
+
+## Comparative Analysis
+
+| Aspect | SHAP | LIME |
+|--------|------|------|
+| Scope | Global + Local | Local only |
+| Output | Contribution values of all features | Interpretable linear surrogate for one instance |
+| Feature Interaction | Captured via dependency plots | Limited |
+| Use Case | Identify global important features & individual prediction drivers | Explain single predictions to stakeholders |
+| Strength | Consistent, theoretically sound (Shapley values) | Highly intuitive for non-technical stakeholders |
+
+**Insights:**  
+- SHAP and LIME explanations **converge** on the most influential features for the selected instance.  
+- **Divergence** may appear for features with weak impact, as LIME only approximates locally.  
+- SHAP’s global view helps **identify blind spots** and refine decision-making criteria.
+
+---
+
+## Usage
+
+1. **Run the analysis script:**
+
+```bash
+python shap_analysis.py
+Outputs generated:
+
+final_lgbm_model.pkl → trained model
+
+SHAP summary plot (interactive)
+
+SHAP waterfall plot for selected instance
+
+lime_explanation.html → LIME interactive explanationOutputs generated:
+
+final_lgbm_model.pkl → trained model
+
+SHAP summary plot (interactive)
+
+SHAP waterfall plot for selected instance
+
+lime_explanation.html → LIME interactive explanation
+Dependencies
+
+Python 3.8+
+
+Libraries: numpy, pandas, lightgbm, scikit-learn, shap, joblib, lime, matplotlib
+
+Install via:
+pip install numpy pandas scikit-learn lightgbm shap joblib lime matplotlib
+
+Conclusion
+
+This project demonstrates how state-of-the-art interpretability techniques can be applied to black-box models, providing both global insights and local explanations. The combination of SHAP and LIME ensures a comprehensive understanding, suitable for both data scientists and business stakeholders.
+
