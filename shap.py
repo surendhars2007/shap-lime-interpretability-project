@@ -6,6 +6,7 @@ import joblib
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, roc_auc_score
 from sklearn.datasets import make_classification
+from lime.lime_tabular import LimeTabularExplainer
 
 # ---------------------------------------------------------
 # 1. Generate dataset
@@ -58,53 +59,46 @@ print(f"\nAUC: {auc}\n")
 print(classification_report(y_test, model.predict(X_test)))
 
 # ---------------------------------------------------------
-# 5. SHAP explainer
+# 5. SHAP Explainer
 # ---------------------------------------------------------
 explainer = shap.TreeExplainer(model)
 shap_values = explainer.shap_values(X_test)
 
-# -------------------------------------------
-# FIX: LightGBM returns a LIST → pick the first one
-# -------------------------------------------
+# If list → binary classifier → take index 0
 if isinstance(shap_values, list):
     shap_values = shap_values[0]
 
-# -------------------------------------------
-# FIX: SHAP summary requires 2D matrix (samples × features)
-# If 1D → reshape to (1, -1)
-# -------------------------------------------
+# Ensure SHAP matrix shape is valid
 if shap_values.ndim == 1:
     shap_values = shap_values.reshape(-1, len(X_test.columns))
 
 # ---------------------------------------------------------
-# 6. Global SHAP summary plot
+# 6. Global SHAP summary
 # ---------------------------------------------------------
 print("\nGenerating SHAP summary plot...")
 shap.summary_plot(shap_values, X_test, show=True)
 
 # ---------------------------------------------------------
-# 7. Local SHAP Waterfall Plot
+# 7. Local SHAP Explanation (Waterfall)
 # ---------------------------------------------------------
 index_to_explain = 10
 row = X_test.iloc[[index_to_explain]]
 
-# SHAP row values (make 1D)
-shap_row = explainer.shap_values(row)
-if isinstance(shap_row, list):
-    shap_row = shap_row[0]
+local_shap = explainer.shap_values(row)
+if isinstance(local_shap, list):
+    local_shap = local_shap[0]
 
-shap_row = shap_row[0]  # extract vector
+local_shap = local_shap[0]
 
-# expected value fix (scalar or array)
 base_value = explainer.expected_value
 if isinstance(base_value, (list, np.ndarray)):
     base_value = base_value[0]
 
-print(f"\nExplaining row index: {index_to_explain}")
+print(f"\nExplaining row index (SHAP): {index_to_explain}")
 
 shap.plots.waterfall(
     shap.Explanation(
-        values=shap_row,
+        values=local_shap,
         base_values=base_value,
         data=row.values[0],
         feature_names=X_train.columns
@@ -112,7 +106,30 @@ shap.plots.waterfall(
 )
 
 # ---------------------------------------------------------
-# 8. Save model
+# 8. LIME Explanation
+# ---------------------------------------------------------
+print("\nGenerating LIME explanation...")
+
+lime_explainer = LimeTabularExplainer(
+    training_data=np.array(X_train),
+    feature_names=X_train.columns.tolist(),
+    class_names=["Class 0", "Class 1"],
+    mode="classification"
+)
+
+lime_exp = lime_explainer.explain_instance(
+    data_row=row.values[0],
+    predict_fn=model.predict_proba
+)
+
+lime_exp.show_in_notebook(show_table=True)
+
+# Save LIME as HTML
+lime_exp.save_to_file("lime_explanation.html")
+print("\nLIME explanation saved as lime_explanation.html")
+
+# ---------------------------------------------------------
+# 9. Save model
 # ---------------------------------------------------------
 joblib.dump(model, "final_lgbm_model.pkl")
 print("\nModel saved successfully as final_lgbm_model.pkl")
